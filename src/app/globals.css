@@ -1,26 +1,133 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700&display=swap");
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f6f8fb;
+  --foreground: #122033;
+  --card: #ffffff;
+  --primary: #0e3a5d;
+  --primary-hover: #0b314f;
+  --primary-soft: #e5eff7;
+  --muted: #eef3f8;
+  --muted-foreground: #64758b;
+  --border: #dbe4ee;
+  --ring: #1f4f74;
+  --ring-soft: #d9e8f4;
+  --danger: #b74040;
+  --success: #1b7a4c;
+  --success-soft: #e5f4ec;
+  --warning: #a76a17;
+  --warning-soft: #fff3de;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: "Plus Jakarta Sans", var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-heading: "Manrope", "Plus Jakarta Sans", var(--font-geist-sans);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes caret-blink {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  46%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes hero-pan {
+  0% {
+    transform: scale(1.02) translateX(0px);
+  }
+  50% {
+    transform: scale(1.06) translateX(-6px);
+  }
+  100% {
+    transform: scale(1.02) translateX(0px);
+  }
+}
+
+@keyframes hero-float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@keyframes orb-drift {
+  0% {
+    transform: translate(0px, 0px);
+  }
+  50% {
+    transform: translate(8px, -8px);
+  }
+  100% {
+    transform: translate(0px, 0px);
+  }
+}
+
+.font-heading {
+  font-family: "Manrope", "Plus Jakarta Sans", sans-serif;
+}
+
+.enter-fade-up {
+  animation: fade-up 420ms ease-out both;
+}
+
+.typing-caret {
+  margin-left: 2px;
+  border-right: 2px solid var(--primary);
+  animation: caret-blink 1s step-end infinite;
+}
+
+.hero-image-main {
+  animation: hero-pan 11s ease-in-out infinite;
+}
+
+.hero-image-float {
+  animation: hero-float 4.5s ease-in-out infinite;
+}
+
+.hero-orb-1,
+.hero-orb-2 {
+  animation: orb-drift 7s ease-in-out infinite;
+}
+
+.hero-orb-2 {
+  animation-delay: 0.8s;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
