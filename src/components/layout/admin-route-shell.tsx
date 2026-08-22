@@ -19,7 +19,7 @@ export function AdminRouteShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <RoleGuard role="admin" loginPath="/admin/login">
+    <RoleGuard loginPath="/admin/login">
       <AdminLayout onLogout={handleLogout}>{children}</AdminLayout>
     </RoleGuard>
   );

@@ -1,13 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { CalendarDays, CheckCircle2, Clock3, MapPin, Plus, WalletCards } from "lucide-react";
-import { bikes, bookings, mechanics, servicePackages } from "@/mock/data";
+import { CalendarDays, CheckCircle2, Clock3, MapPin, WalletCards } from "lucide-react";
+import { createBooking, fetchServices, fetchServiceZones, getUserToken, type ApiService, type ApiServiceZone } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ConfirmationModal } from "@/components/modals/confirmation-modal";
 
 const steps = ["Bike", "Service", "Location", "Schedule", "Review", "Confirmation"];
@@ -24,17 +25,45 @@ const slots = [
 
 export function BookingFlow() {
   const [step, setStep] = useState(1);
-  const [selectedBikeId, setSelectedBikeId] = useState(bikes[0].id);
-  const [selectedServices, setSelectedServices] = useState<string[]>([servicePackages[1].id]);
-  const [selectedAddress, setSelectedAddress] = useState("Home");
+  const [bikeBrand, setBikeBrand] = useState("");
+  const [bikeModel, setBikeModel] = useState("");
+  const [services, setServices] = useState<ApiService[]>([]);
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [serviceZones, setServiceZones] = useState<ApiServiceZone[]>([]);
+  const [serviceAddress, setServiceAddress] = useState("");
   const [selectedDate, setSelectedDate] = useState("Tomorrow");
   const [selectedTime, setSelectedTime] = useState("4:00 PM");
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [servicesError, setServicesError] = useState("");
+  const [zonesError, setZonesError] = useState("");
+  const [bookingId, setBookingId] = useState("BK-PENDING");
+  const [submitting, setSubmitting] = useState(false);
 
-  const selectedBike = bikes.find((bike) => bike.id === selectedBikeId) ?? bikes[0];
-  const selectedMechanic = mechanics[0];
-  const selectedServiceObjects = servicePackages.filter((pkg) => selectedServices.includes(pkg.id));
-  const total = selectedServiceObjects.reduce((sum, item) => sum + item.price, 0);
+  const selectedServiceObjects = services.filter((service) => selectedServices.includes(service._id));
+
+  useEffect(() => {
+    fetchServices()
+      .then((apiServices) => {
+        setServices(apiServices);
+        if (apiServices.length > 0) {
+          setSelectedServices([apiServices[0]._id]);
+        }
+      })
+      .catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : "Unable to load services";
+        setServicesError(message);
+      });
+  }, []);
+
+  useEffect(() => {
+    fetchServiceZones()
+      .then((zones) => setServiceZones(zones))
+      .catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : "Unable to load service zones";
+        setZonesError(message);
+      });
+  }, []);
 
   const selectedServiceName = useMemo(() => {
     if (!selectedServiceObjects.length) return "No service selected";
@@ -49,9 +78,9 @@ export function BookingFlow() {
   }
 
   const canContinue =
-    (step === 1 && Boolean(selectedBikeId)) ||
+    (step === 1 && Boolean(bikeBrand.trim() && bikeModel.trim())) ||
     (step === 2 && selectedServices.length > 0) ||
-    (step === 3 && Boolean(selectedAddress)) ||
+    (step === 3 && Boolean(serviceAddress.trim())) ||
     (step === 4 && Boolean(selectedDate && selectedTime)) ||
     step > 4;
 
@@ -77,37 +106,12 @@ export function BookingFlow() {
           <CardContent className="p-5 sm:p-6">
             {step === 1 ? (
               <div>
-                <h2 className="font-heading text-xl font-semibold">Select Bike</h2>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  {bikes.map((bike) => (
-                    <button
-                      key={bike.id}
-                      onClick={() => setSelectedBikeId(bike.id)}
-                      className={`rounded-xl border p-4 text-left transition ${
-                        selectedBikeId === bike.id ? "border-[var(--primary)] bg-[var(--primary-soft)]" : "border-[var(--border)]"
-                      }`}
-                    >
-                      <p className="font-semibold">{bike.brand} {bike.model}</p>
-                      <p className="mt-1 text-sm text-[var(--muted-foreground)]">{bike.registrationNumber}</p>
-                      <p className="mt-1 text-xs text-[var(--muted-foreground)]">Last service: {bike.lastServiceDate}</p>
-                    </button>
-                  ))}
-                  <button className="grid min-h-[122px] place-items-center rounded-xl border border-dashed border-[var(--border)] text-sm text-[var(--muted-foreground)]">
-                    <span className="inline-flex items-center gap-1"><Plus className="h-4 w-4" /> Add New Bike</span>
-                  </button>
-                </div>
-
-                <h3 className="mt-8 font-heading text-lg font-semibold">Add Bike</h3>
+                <h2 className="font-heading text-xl font-semibold">Bike Details</h2>
+                <p className="mt-1 text-sm text-[var(--muted-foreground)]">Required: bike brand and bike model.</p>
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <Input placeholder="Bike brand" />
-                  <Input placeholder="Model" />
-                  <Input placeholder="Variant" />
-                  <Input placeholder="Registration number" />
-                  <Input placeholder="Manufacturing year" />
-                  <Input placeholder="Current KM" />
-                  <Input placeholder="Fuel type" />
+                  <Input placeholder="Bike brand" value={bikeBrand} onChange={(event) => setBikeBrand(event.target.value)} />
+                  <Input placeholder="Bike model" value={bikeModel} onChange={(event) => setBikeModel(event.target.value)} />
                 </div>
-                <Button className="mt-3" variant="secondary">Save Bike</Button>
               </div>
             ) : null}
 
@@ -115,47 +119,51 @@ export function BookingFlow() {
               <div>
                 <h2 className="font-heading text-xl font-semibold">Select Service</h2>
                 <div className="mt-4 space-y-3">
-                  {servicePackages.map((service) => (
+                  {services.map((service) => (
                     <button
-                      key={service.id}
-                      onClick={() => onServiceToggle(service.id)}
+                      key={service._id}
+                      onClick={() => onServiceToggle(service._id)}
                       className={`w-full rounded-xl border p-4 text-left transition ${
-                        selectedServices.includes(service.id)
+                        selectedServices.includes(service._id)
                           ? "border-[var(--primary)] bg-[var(--primary-soft)]"
                           : "border-[var(--border)]"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-3">
                         <p className="font-semibold">{service.name}</p>
-                        <Badge>{service.duration}</Badge>
+                        <Badge>Doorstep</Badge>
                       </div>
-                      <p className="mt-1 text-sm text-[var(--muted-foreground)]">₹{service.price} onwards</p>
-                      <p className="mt-2 text-xs text-[var(--muted-foreground)]">Includes: {service.includes.join(", ")}</p>
+                      <p className="mt-2 text-xs text-[var(--muted-foreground)]">{service.description}</p>
                     </button>
                   ))}
+                  {servicesError ? <p className="text-sm text-[var(--danger)]">{servicesError}</p> : null}
                 </div>
               </div>
             ) : null}
 
             {step === 3 ? (
               <div>
-                <h2 className="font-heading text-xl font-semibold">Choose Location</h2>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  {["Use Current Location", "Home", "Work", "Add New Address"].map((item) => (
+                <h2 className="font-heading text-xl font-semibold">Service Address</h2>
+                <p className="mt-1 text-sm text-[var(--muted-foreground)]">Pick your service zone, then add full address details.</p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {serviceZones.map((zone) => (
                     <button
-                      key={item}
-                      onClick={() => setSelectedAddress(item)}
-                      className={`rounded-xl border p-4 text-left ${
-                        selectedAddress === item ? "border-[var(--primary)] bg-[var(--primary-soft)]" : "border-[var(--border)]"
-                      }`}
+                      key={zone._id}
+                      onClick={() => setServiceAddress((current) => (current.trim() ? current : `${zone.name}, `))}
+                      className="rounded-full border border-[var(--border)] bg-[var(--muted)] px-3 py-1 text-xs hover:border-[var(--primary)]"
                     >
-                      <p className="font-semibold">{item}</p>
-                      <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-                        Rahul · +91 98450 12345 · HSR Layout Sector 2, Bengaluru · 560102
-                      </p>
+                      {zone.name}
                     </button>
                   ))}
                 </div>
+                <div className="mt-4">
+                  <Textarea
+                    placeholder="Enter full address with area and PIN code"
+                    value={serviceAddress}
+                    onChange={(event) => setServiceAddress(event.target.value)}
+                  />
+                </div>
+                {zonesError ? <p className="mt-2 text-sm text-[var(--danger)]">{zonesError}</p> : null}
               </div>
             ) : null}
 
@@ -201,17 +209,16 @@ export function BookingFlow() {
                 <h2 className="font-heading text-xl font-semibold">Booking Review</h2>
                 <Card className="border-dashed">
                   <CardContent className="space-y-2 p-4 text-sm">
-                    <p><strong>Bike:</strong> {selectedBike.brand} {selectedBike.model}</p>
+                    <p><strong>Bike:</strong> {bikeBrand} {bikeModel}</p>
                     <p><strong>Service:</strong> {selectedServiceName}</p>
-                    <p><strong>Mechanic:</strong> {selectedMechanic.name}</p>
-                    <p><strong>Date:</strong> 20 Aug 2026</p>
+                    <p><strong>Date:</strong> {selectedDate}</p>
                     <p><strong>Time:</strong> {selectedTime}</p>
-                    <p><strong>Location:</strong> Customer address</p>
-                    <p><strong>Estimated cost:</strong> ₹{total}</p>
-                    <p><strong>Payment:</strong> Pay Mechanic</p>
+                    <p><strong>Address:</strong> {serviceAddress}</p>
+                    <p><strong>Payment:</strong> Final amount is added by admin after service.</p>
                   </CardContent>
                 </Card>
                 <Button onClick={() => setConfirmOpen(true)}>Confirm Booking</Button>
+                {submitError ? <p className="text-sm text-[var(--danger)]">{submitError}</p> : null}
               </div>
             ) : null}
 
@@ -220,15 +227,15 @@ export function BookingFlow() {
                 <CheckCircle2 className="mx-auto h-16 w-16 text-[var(--success)]" />
                 <h2 className="mt-4 font-heading text-2xl font-semibold">Your Service is Booked!</h2>
                 <div className="mx-auto mt-4 max-w-md space-y-2 text-sm text-[var(--muted-foreground)]">
-                  <p>Booking ID: BK-20260820-1024</p>
-                  <p>Mechanic: Rajesh Kumar</p>
-                  <p>Date: 20 Aug 2026</p>
-                  <p>Time: 4:00 PM</p>
-                  <p>Address: Customer location</p>
+                  <p>Booking ID: {bookingId}</p>
+                  <p>Bike: {bikeBrand} {bikeModel}</p>
+                  <p>Date: {selectedDate}</p>
+                  <p>Time: {selectedTime}</p>
+                  <p>Address: {serviceAddress}</p>
                 </div>
                 <div className="mt-6 flex flex-wrap justify-center gap-3">
-                  <Button asChild><Link href="/dashboard/bookings/BK-20260820-1024">Track Booking</Link></Button>
-                  <Button variant="secondary">View Booking</Button>
+                  <Button asChild><Link href="/dashboard/history">My Services</Link></Button>
+                  <Button variant="secondary" asChild><Link href="/booking">Book Another</Link></Button>
                   <Button variant="ghost" asChild><Link href="/">Back to Home</Link></Button>
                 </div>
               </div>
@@ -251,12 +258,12 @@ export function BookingFlow() {
           <CardContent className="p-5">
             <h3 className="font-heading text-lg font-semibold">Booking Summary</h3>
             <div className="mt-4 space-y-3 text-sm">
-              <p className="flex items-center gap-2"><MapPin className="h-4 w-4" /> {selectedAddress}</p>
+              <p className="flex items-center gap-2"><MapPin className="h-4 w-4" /> {serviceAddress || "No address added"}</p>
               <p className="flex items-center gap-2"><CalendarDays className="h-4 w-4" /> {selectedDate}</p>
               <p className="flex items-center gap-2"><Clock3 className="h-4 w-4" /> {selectedTime}</p>
-              <p className="flex items-center gap-2"><WalletCards className="h-4 w-4" /> ₹{total}</p>
+              <p className="flex items-center gap-2"><WalletCards className="h-4 w-4" /> {bikeBrand || "Bike brand"} {bikeModel || "Bike model"}</p>
+              <p className="flex items-center gap-2"><WalletCards className="h-4 w-4" /> Amount will be finalized by admin</p>
             </div>
-            {bookings.length === 0 ? <p className="mt-4 text-sm text-[var(--muted-foreground)]">No bookings yet</p> : null}
           </CardContent>
         </Card>
       </div>
@@ -264,13 +271,42 @@ export function BookingFlow() {
       <ConfirmationModal
         open={confirmOpen}
         title="Confirm service booking"
-        description="This will create your booking request and assign the nearest available mechanic."
+        description="This will create your booking request and assign the nearest available service partner."
         onCancel={() => setConfirmOpen(false)}
-        onConfirm={() => {
-          setConfirmOpen(false);
-          setStep(6);
+        onConfirm={async () => {
+          setSubmitError("");
+          const token = getUserToken();
+          if (!token) {
+            setConfirmOpen(false);
+            setSubmitError("Please login as customer first.");
+            return;
+          }
+
+          try {
+            setSubmitting(true);
+            const result = await createBooking(
+              {
+                bikeName: `${bikeBrand} ${bikeModel}`.trim(),
+                serviceAddress: serviceAddress.trim(),
+                serviceIds: selectedServices,
+                scheduledDate: selectedDate,
+                scheduledTime: selectedTime,
+              },
+              token,
+            );
+            setBookingId(result._id);
+            setConfirmOpen(false);
+            setStep(6);
+          } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Unable to create booking";
+            setSubmitError(message);
+            setConfirmOpen(false);
+          } finally {
+            setSubmitting(false);
+          }
         }}
       />
+      {submitting ? <p className="mt-3 text-center text-sm text-[var(--muted-foreground)]">Submitting booking...</p> : null}
     </div>
   );
 }

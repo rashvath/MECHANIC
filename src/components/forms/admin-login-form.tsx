@@ -1,10 +1,10 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2, ShieldCheck } from "lucide-react";
-import { adminDemoCredentials, authStorageKeys } from "@/mock/auth";
+import { authStorageKeys } from "@/mock/auth";
+import { login, setAdminToken } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -35,16 +35,24 @@ export function AdminLoginForm() {
 
     setLoading(true);
 
-    window.setTimeout(() => {
-      if (email === adminDemoCredentials.email && password === adminDemoCredentials.password) {
-        window.localStorage.setItem(authStorageKeys.admin, "logged_in");
+    login(email, password)
+      .then((data) => {
+        if (data.user.role !== "admin") {
+          setError("This account is not an admin account.");
+          return;
+        }
+
+        setAdminToken(data.token);
         setSuccess("Login successful. Redirecting to admin dashboard...");
         router.push("/admin");
-      } else {
-        setError("Invalid credentials. Use the demo credentials shown below.");
-      }
-      setLoading(false);
-    }, 650);
+      })
+      .catch((apiError: unknown) => {
+        const message = apiError instanceof Error ? apiError.message : "Unable to login";
+        setError(message);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }
 
   return (
@@ -56,7 +64,7 @@ export function AdminLoginForm() {
               <ShieldCheck className="h-5 w-5" />
             </div>
             <CardTitle className="font-heading text-2xl">Admin Login</CardTitle>
-            <p className="text-sm text-[var(--muted-foreground)]">Sign in to Royal mechanics admin control center.</p>
+            <p className="text-sm text-[var(--muted-foreground)]">Sign in to Royal Mechanic admin control center.</p>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-3">
@@ -94,16 +102,6 @@ export function AdminLoginForm() {
                 Login to Admin
               </Button>
             </form>
-
-            <div className="mt-4 rounded-xl border border-dashed border-[var(--border)] p-3 text-xs text-[var(--muted-foreground)]">
-              <p className="font-semibold text-[var(--foreground)]">Demo credentials</p>
-              <p>Email: {adminDemoCredentials.email}</p>
-              <p>Password: {adminDemoCredentials.password}</p>
-            </div>
-
-            <div className="mt-4 text-sm text-[var(--muted-foreground)]">
-              Mechanic portal? <Link href="/mechanic/login" className="text-[var(--primary)]">Sign in here</Link>
-            </div>
           </CardContent>
         </Card>
       </div>

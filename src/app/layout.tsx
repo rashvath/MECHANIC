@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Royal mechanics | Doorstep Bike Service Platform",
-  description: "Bike service at your doorstep with user, mechanic, and admin experiences.",
+  title: "Royal Mechanic | Doorstep Bike Service Bengaluru",
+  description: "Doorstep bike service in Bengaluru with clean customer booking and admin operations.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

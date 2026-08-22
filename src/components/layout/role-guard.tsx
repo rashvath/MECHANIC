@@ -1,34 +1,47 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { authStorageKeys } from "@/mock/auth";
 import { Skeleton } from "@/components/ui/skeleton";
 
-type Role = "admin" | "mechanic";
-
-export function RoleGuard({ role, loginPath, children }: { role: Role; loginPath: string; children: React.ReactNode }) {
+export function RoleGuard({ loginPath, children }: { loginPath: string; children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const isLoginPath = pathname === loginPath;
-  const key = role === "admin" ? authStorageKeys.admin : authStorageKeys.mechanic;
-  const token = typeof window !== "undefined" ? window.localStorage.getItem(key) : null;
+  const key = authStorageKeys.admin;
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
     if (isLoginPath) {
       return;
     }
 
-    if (!token) {
+    const timer = window.setTimeout(() => {
+      const token = window.localStorage.getItem(key);
+
+      if (token) {
+        setIsAuthorized(true);
+        setIsCheckingAuth(false);
+        return;
+      }
+
+      setIsAuthorized(false);
+      setIsCheckingAuth(false);
       router.replace(loginPath);
-    }
-  }, [isLoginPath, loginPath, router, token]);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [isLoginPath, key, loginPath, router]);
 
   if (isLoginPath) {
     return <>{children}</>;
   }
 
-  if (!token) {
+  if (isCheckingAuth || !isAuthorized) {
     return (
       <div className="mx-auto w-full max-w-5xl space-y-4 px-4 py-8 sm:px-6">
         <Skeleton className="h-10 w-48" />

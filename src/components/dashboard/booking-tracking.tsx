@@ -1,5 +1,5 @@
 import { Phone, Star } from "lucide-react";
-import { bookings, mechanics } from "@/mock/data";
+import { bookings } from "@/mock/data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,16 +7,14 @@ import { MapPlaceholder } from "@/components/maps/map-placeholder";
 
 const trackingSteps = [
   "Booking Confirmed",
-  "Mechanic Assigned",
-  "Mechanic Accepted",
-  "Mechanic On the Way",
+  "Partner Assigned",
+  "Partner On the Way",
   "Service Started",
   "Service Completed",
 ];
 
 export function BookingTracking({ bookingId }: { bookingId: string }) {
   const booking = bookings.find((item) => item.id === bookingId) ?? bookings[0];
-  const mechanic = mechanics.find((item) => item.id === booking.mechanicId) ?? mechanics[0];
   const currentStep = trackingSteps.indexOf(booking.status);
 
   return (
@@ -39,12 +37,12 @@ export function BookingTracking({ bookingId }: { bookingId: string }) {
       <Card>
         <CardContent className="flex flex-wrap items-center justify-between gap-4 p-5">
           <div>
-            <p className="font-semibold">{mechanic.name}</p>
+            <p className="font-semibold">{booking.assignedPartner}</p>
             <p className="text-sm text-[var(--muted-foreground)]">ETA: 18 minutes</p>
-            <div className="mt-2 flex items-center gap-2 text-sm"><Star className="h-4 w-4" /> {mechanic.rating}</div>
+            <div className="mt-2 flex items-center gap-2 text-sm"><Star className="h-4 w-4" /> 4.8</div>
           </div>
           <div className="flex items-center gap-2">
-            <Badge>Mechanic Assigned</Badge>
+            <Badge>{booking.status}</Badge>
             <Button variant="secondary" size="sm"><Phone className="mr-1 h-4 w-4" /> Phone</Button>
           </div>
         </CardContent>

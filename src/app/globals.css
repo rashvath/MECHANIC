@@ -2,22 +2,22 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f6f8fb;
-  --foreground: #122033;
-  --card: #ffffff;
-  --primary: #0e3a5d;
-  --primary-hover: #0b314f;
-  --primary-soft: #e5eff7;
-  --muted: #eef3f8;
-  --muted-foreground: #64758b;
-  --border: #dbe4ee;
-  --ring: #1f4f74;
-  --ring-soft: #d9e8f4;
-  --danger: #b74040;
-  --success: #1b7a4c;
-  --success-soft: #e5f4ec;
-  --warning: #a76a17;
-  --warning-soft: #fff3de;
+  --background: #0d0f13;
+  --foreground: #f4efe5;
+  --card: #171b22;
+  --primary: #b88a3b;
+  --primary-hover: #d2a350;
+  --primary-soft: #2b2217;
+  --muted: #141922;
+  --muted-foreground: #b2a896;
+  --border: #322b23;
+  --ring: #d5ad63;
+  --ring-soft: #3d301f;
+  --danger: #cf5d5d;
+  --success: #72c18f;
+  --success-soft: #1c2c22;
+  --warning: #c58b3b;
+  --warning-soft: #2f2418;
 }
 
 @theme inline {
@@ -29,7 +29,10 @@
 }
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(circle at 10% 10%, rgba(189, 144, 70, 0.12), transparent 32%),
+    radial-gradient(circle at 90% 25%, rgba(90, 66, 31, 0.22), transparent 34%),
+    var(--background);
   color: var(--foreground);
   font-family: "Plus Jakarta Sans", sans-serif;
 }
@@ -92,6 +95,78 @@ body {
   }
 }
 
+@keyframes card-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes grain-slide {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes badge-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes title-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+    letter-spacing: 0.03em;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    letter-spacing: 0;
+  }
+}
+
+@keyframes accent-glow {
+  0%,
+  100% {
+    text-shadow: 0 0 0 rgba(210, 164, 84, 0);
+  }
+  50% {
+    text-shadow: 0 0 18px rgba(210, 164, 84, 0.35);
+  }
+}
+
+@keyframes step-arrow-slide {
+  0% {
+    transform: translateX(0);
+    opacity: 0.65;
+  }
+  50% {
+    transform: translateX(8px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 0.65;
+  }
+}
+
 .font-heading {
   font-family: "Manrope", "Plus Jakarta Sans", sans-serif;
 }
@@ -121,6 +196,47 @@ body {
 
 .hero-orb-2 {
   animation-delay: 0.8s;
+}
+
+.royal-hero-wrap {
+  animation: card-rise 550ms ease-out both;
+}
+
+.royal-grid {
+  opacity: 0.22;
+  background-image:
+    linear-gradient(to right, rgba(205, 161, 86, 0.16) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(205, 161, 86, 0.14) 1px, transparent 1px);
+  background-size: 34px 34px;
+  animation: grain-slide 8s ease-in-out infinite;
+}
+
+.hero-badge-pop {
+  animation: badge-pop 520ms ease-out both;
+}
+
+.hero-title-reveal {
+  animation: title-reveal 650ms ease-out both;
+}
+
+.hero-title-accent {
+  animation: accent-glow 2.8s ease-in-out infinite;
+}
+
+.how-step-arrow {
+  animation: step-arrow-slide 1.5s ease-in-out infinite;
+}
+
+.how-step-arrow-delay-1 {
+  animation-delay: 120ms;
+}
+
+.how-step-arrow-delay-2 {
+  animation-delay: 240ms;
+}
+
+.how-step-arrow-delay-3 {
+  animation-delay: 360ms;
 }
 
 .no-scrollbar {

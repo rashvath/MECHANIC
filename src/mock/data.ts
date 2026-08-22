@@ -1,4 +1,4 @@
-import { Bike, Booking, Mechanic, Review, ServiceCategory, ServicePackage } from "@/types";
+import { Bike, Booking, Review, ServiceCategory, ServicePackage } from "@/types";
 
 export const serviceCategories: ServiceCategory[] = [
   { id: "cat-1", name: "General Service", description: "Complete health check and tune-up.", icon: "Wrench", startingPrice: 499 },
@@ -45,44 +45,17 @@ export const bikes: Bike[] = [
   { id: "bike-4", brand: "Yamaha", model: "R15", registrationNumber: "KA51PL3399", lastServiceDate: "22 Mar 2026", fuelType: "Petrol" },
 ];
 
-export const mechanics: Mechanic[] = [
-  {
-    id: "mech-1",
-    name: "Rajesh Kumar",
-    phone: "+91 98765 43210",
-    rating: 4.8,
-    distanceKm: 2.4,
-    jobsCompleted: 520,
-    slots: ["2:00 PM", "4:00 PM", "5:30 PM"],
-    services: ["Premium Service", "Engine Service", "Brake Service"],
-    location: "HSR Layout",
-    availability: true,
-  },
-  {
-    id: "mech-2",
-    name: "Arjun R",
-    phone: "+91 99887 66554",
-    rating: 4.6,
-    distanceKm: 3.8,
-    jobsCompleted: 368,
-    slots: ["10:30 AM", "12:00 PM"],
-    services: ["General Service", "EV Service"],
-    location: "Koramangala",
-    availability: true,
-  },
-];
-
 export const bookings: Booking[] = [
   {
     id: "BK-20260820-1024",
     customerName: "Rahul Shetty",
     bikeId: "bike-1",
     serviceId: "pkg-premium",
-    mechanicId: "mech-1",
+    assignedPartner: "Rajesh Kumar",
     date: "20 Aug 2026",
     time: "4:00 PM",
     amount: 799,
-    status: "Mechanic Assigned",
+    status: "Partner Assigned",
     location: "HSR Layout, Bengaluru",
   },
   {
@@ -90,7 +63,7 @@ export const bookings: Booking[] = [
     customerName: "Rahul Shetty",
     bikeId: "bike-2",
     serviceId: "pkg-basic",
-    mechanicId: "mech-2",
+    assignedPartner: "Arjun R",
     date: "12 Aug 2026",
     time: "10:30 AM",
     amount: 499,
@@ -104,7 +77,7 @@ export const reviews: Review[] = [
     id: "rev-1",
     customer: "Sneha M",
     service: "Premium Service",
-    mechanic: "Rajesh Kumar",
+    partner: "Rajesh Kumar",
     rating: 5,
     review: "Excellent doorstep service and very transparent explanation of work.",
     date: "14 Aug 2026",
@@ -113,7 +86,7 @@ export const reviews: Review[] = [
     id: "rev-2",
     customer: "Akash P",
     service: "Brake Service",
-    mechanic: "Arjun R",
+    partner: "Arjun R",
     rating: 4,
     review: "Quick response and smooth pickup at my apartment parking.",
     date: "11 Aug 2026",
@@ -122,7 +95,7 @@ export const reviews: Review[] = [
 
 export const adminStats = [
   { label: "Total Users", value: "1,284" },
-  { label: "Active Mechanics", value: "86" },
+  { label: "Active Partners", value: "86" },
   { label: "Today's Bookings", value: "124" },
   { label: "Completed Services", value: "98" },
   { label: "Revenue", value: "₹1,24,500" },

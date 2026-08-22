@@ -1,14 +1,11 @@
 export type BookingStatus =
   | "Pending"
   | "Confirmed"
-  | "Assigned"
+  | "Partner Assigned"
+  | "Partner On the Way"
   | "In Progress"
   | "Completed"
-  | "Cancelled"
-  | "Mechanic Assigned"
-  | "Mechanic Accepted"
-  | "Mechanic On the Way"
-  | "Service Started";
+  | "Cancelled";
 
 export interface Bike {
   id: string;
@@ -37,25 +34,12 @@ export interface ServicePackage {
   duration: string;
 }
 
-export interface Mechanic {
-  id: string;
-  name: string;
-  phone: string;
-  rating: number;
-  distanceKm: number;
-  jobsCompleted: number;
-  slots: string[];
-  services: string[];
-  location: string;
-  availability: boolean;
-}
-
 export interface Booking {
   id: string;
   customerName: string;
   bikeId: string;
   serviceId: string;
-  mechanicId: string;
+  assignedPartner: string;
   date: string;
   time: string;
   amount: number;
@@ -67,7 +51,7 @@ export interface Review {
   id: string;
   customer: string;
   service: string;
-  mechanic: string;
+  partner: string;
   rating: number;
   review: string;
   date: string;
