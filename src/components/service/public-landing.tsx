@@ -5,21 +5,12 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
-  Battery,
-  Circle,
   Cog,
-  Disc,
-  Droplets,
-  Link2,
   MapPin,
-  Plug,
   Shield,
   ShieldCheck,
-  Snowflake,
   Star,
   Timer,
-  Wrench,
-  Zap,
 } from "lucide-react";
 import { fetchServices, fetchServiceZones, type ApiService, type ApiServiceZone } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
@@ -27,8 +18,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Section } from "@/components/layout/section";
 import { PublicHeader } from "@/components/navbar/public-header";
-
-const serviceIcons = [Wrench, Droplets, Disc, Battery, Circle, Link2, Cog, Zap, Snowflake, Plug];
 
 const whyChooseUs = [
   { title: "Transparent Pricing", icon: Star, description: "Know your service cost before booking with no hidden charges." },
@@ -73,7 +62,7 @@ export function PublicLanding() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[var(--background)]" id="home">
+    <div className="min-h-screen bg-background" id="home">
       <PublicHeader />
 
       <main>
@@ -87,17 +76,17 @@ export function PublicLanding() {
                 priority
                 className="hero-image-main object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#0a0c11]/90 via-[#0a0c11]/70 to-[#0a0c11]/35" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0a0c11]/92 via-transparent to-[#0a0c11]/18" />
+              <div className="absolute inset-0 bg-linear-to-r from-[#0a0c11]/90 via-[#0a0c11]/70 to-[#0a0c11]/35" />
+              <div className="absolute inset-0 bg-linear-to-t from-[#0a0c11]/92 via-transparent to-[#0a0c11]/18" />
               <div className="royal-grid absolute inset-0" />
             </div>
 
             <div className="relative z-10 grid gap-8 p-5 sm:p-8 lg:grid-cols-[1fr_320px] lg:p-10">
               <div className="max-w-2xl">
                 <Badge className="hero-badge-pop mb-4 border-[#c79c56]/50 bg-[#2a2118] text-[#eac37f]">Doorstep Bike Service</Badge>
-                <h1 className="hero-title-reveal font-heading text-4xl font-extrabold uppercase leading-[0.95] tracking-tight text-[#ede9de] sm:text-6xl">
-                  Premium Bike Service
-                  <span className="hero-title-accent mt-2 block text-[#d2a454]">At Your Doorstep</span>
+                <h1 className="hero-title-reveal hero-title-gold font-heading text-4xl font-extrabold uppercase leading-[0.95] tracking-tight sm:text-6xl">
+                  <span className="hero-title-shimmer">Premium Bike Service</span>
+                  <span className="hero-title-accent hero-title-shimmer mt-2 block">At Your Doorstep</span>
                 </h1>
                 <p className="mt-5 max-w-xl text-sm text-[#d0c6b6] sm:text-xl">
                   Expert care. Genuine parts. Affordable pricing. We come to you, so you save time.
@@ -115,7 +104,7 @@ export function PublicLanding() {
                 </div>
 
                 <div className="mt-6 flex flex-wrap gap-3">
-                  <Button asChild size="lg" className="min-w-[210px] justify-between">
+                  <Button asChild size="lg" className="min-w-52.5 justify-between">
                     <Link href="/booking">
                       Book Your Service
                       <ArrowRight className="h-4 w-4" />
@@ -125,7 +114,7 @@ export function PublicLanding() {
                     asChild
                     variant="secondary"
                     size="lg"
-                    className="min-w-[210px] justify-between border-[#7c6138] bg-transparent text-[#efe6d6] hover:bg-[#1f1a12]"
+                    className="min-w-52.5 justify-between border-[#7c6138] bg-transparent text-[#efe6d6] hover:bg-[#1f1a12]"
                   >
                     <a href="#services">
                       View All Services
@@ -159,26 +148,52 @@ export function PublicLanding() {
         </Section>
 
         <Section id="services" title="Bike Care Services">
-          <div className="no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible lg:grid-cols-4">
-            {services.map((service, index) => {
-              const Icon = serviceIcons[index % serviceIcons.length] ?? Wrench;
-              return (
-                <Card key={service._id} className="min-w-[270px] border-[#3c2d1d] bg-[#171b22] sm:min-w-0">
-                  <CardContent className="p-5">
-                    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-[#2c2114] text-[#e6b45e]">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <h3 className="font-semibold">{service.name}</h3>
-                    <p className="mt-1 text-sm text-[var(--muted-foreground)]">{service.description}</p>
-                    <div className="mt-4 flex items-center justify-between text-sm font-semibold">
-                      <span>Final amount shared after service</span>
-                      <ArrowRight className="h-4 w-4" />
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-            {servicesError ? <p className="text-sm text-[var(--danger)]">{servicesError}</p> : null}
+          <div className="no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible lg:grid-cols-3">
+            {services.map((service) => (
+              <Card key={service._id} className="w-72 min-w-72 justify-self-start border-[#8b662e] bg-[#151a22] sm:w-72 sm:min-w-72">
+                <CardContent className="p-5 text-center">
+                  <div className="mb-2 flex justify-center">
+                    <Image
+                      src="/images/logo.png"
+                      alt="Royal Mechanic logo"
+                      width={88}
+                      height={88}
+                      className="object-contain"
+                    />
+                  </div>
+                  <h3 className="font-heading text-xl font-semibold tracking-wide text-[#eac37f]">{service.name}</h3>
+                  <p className="mt-1 text-sm text-[#c7b089]">DOOR STEP SERVICE</p>
+                  <div className="mt-4 border-y border-[#7f5e2d] py-4">
+                    <p className="text-3xl font-extrabold text-[#f2e6cf]">₹{service.startingPrice}</p>
+                    <p className="mt-1 text-xs text-(--muted-foreground)">Final amount shared after service</p>
+                  </div>
+                  <p className="mt-3 text-xs text-[#d0c3a7]">
+                    Please note that additional charges may apply if spare parts are required.
+                  </p>
+                  <div className="mt-4 space-y-2 text-left">
+                    {service.description
+                      .split("\n")
+                      .map((line) => line.trim())
+                      .filter(Boolean)
+                      .slice(0, 6)
+                      .map((line, index) => (
+                        <p key={`${service._id}-line-${index}`} className="rounded-md border border-[#23442f] bg-[#13281c] px-3 py-2 text-xs text-[#b9e7c7]">
+                          {line.replace(/^[-*]\s*/, "")}
+                        </p>
+                      ))}
+                  </div>
+                  <div className="mt-5">
+                    <Button asChild className="w-full rounded-full bg-[#b48a3c] font-semibold text-[#1a1712] hover:bg-[#cca155]">
+                      <Link href={`/booking?from=card&serviceId=${service._id}`}>
+                        Book Service
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            {servicesError ? <p className="text-sm text-(--danger)">{servicesError}</p> : null}
           </div>
         </Section>
 
@@ -209,7 +224,7 @@ export function PublicLanding() {
                 <CardContent className="p-5">
                   <item.icon className="h-5 w-5 text-[#e6b45e]" />
                   <p className="mt-3 font-semibold">{item.title}</p>
-                  <p className="mt-1 text-sm text-[var(--muted-foreground)]">{item.description}</p>
+                  <p className="mt-1 text-sm text-(--muted-foreground)">{item.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -223,23 +238,26 @@ export function PublicLanding() {
                 <CardContent className="flex items-center justify-between p-5">
                   <div>
                     <p className="font-semibold">{zone.name}</p>
-                    <p className="mt-1 text-sm text-[var(--muted-foreground)]">Doorstep coverage available</p>
+                    <p className="mt-1 text-sm text-(--muted-foreground)">Doorstep coverage available</p>
                   </div>
                   <Shield className="h-5 w-5 text-[#e6b45e]" />
                 </CardContent>
               </Card>
             ))}
           </div>
-          {zonesError ? <p className="mt-3 text-sm text-[var(--danger)]">{zonesError}</p> : null}
+          {zonesError ? <p className="mt-3 text-sm text-(--danger)">{zonesError}</p> : null}
         </Section>
 
         <Section>
-          <Card className="border-[#5b4424] bg-gradient-to-r from-[#1b1f27] via-[#1f2531] to-[#2a2218] p-8 text-white">
+          <Card className="border-[#5b4424] bg-linear-to-r from-[#1b1f27] via-[#1f2531] to-[#2a2218] p-8 text-white">
             <div className="grid items-center gap-6 lg:grid-cols-[1fr_auto]">
               <div>
                 <h3 className="font-heading text-2xl font-semibold text-[#f4d39b]">Ready To Service Your Bike?</h3>
                 <p className="mt-2 max-w-2xl text-sm text-slate-100">
                   Location → Bike → Service → Time → Confirm. Built to complete bookings in minutes.
+                </p>
+                <p className="mt-3 text-sm text-[#f4d39b]">
+                  Call / WhatsApp: <a className="underline underline-offset-4" href="tel:+918951181187">+91 89511 81187</a>
                 </p>
                 <div className="mt-5 flex flex-wrap gap-3">
                   <Button asChild variant="secondary">
@@ -247,6 +265,9 @@ export function PublicLanding() {
                   </Button>
                   <Button asChild className="bg-slate-900 hover:bg-slate-800">
                     <Link href="/dashboard">Open Customer Dashboard</Link>
+                  </Button>
+                  <Button asChild variant="ghost" className="text-[#f4d39b] hover:bg-[#1f1a12] hover:text-[#f4d39b]">
+                    <a href="https://wa.me/918951181187" target="_blank" rel="noreferrer">WhatsApp Now</a>
                   </Button>
                 </div>
               </div>

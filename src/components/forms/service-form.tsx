@@ -5,14 +5,29 @@ import { createService, deleteService, fetchServices, getAdminToken, updateServi
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+
+function parseDescriptionPoints(description: string) {
+  return description
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => line.replace(/^[-*]\s*/, ""));
+}
+
+function buildDescription(points: string[]) {
+  return points
+    .map((point) => point.trim())
+    .filter(Boolean)
+    .map((point) => `- ${point}`)
+    .join("\n");
+}
 
 export function ServiceForm() {
   const [services, setServices] = useState<ApiService[]>([]);
   const [selectedId, setSelectedId] = useState("");
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
-  const [description, setDescription] = useState("");
+  const [includedPoints, setIncludedPoints] = useState<string[]>([""]);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -28,7 +43,7 @@ export function ServiceForm() {
   function resetForm() {
     setName("");
     setPrice("");
-    setDescription("");
+    setIncludedPoints([""]);
     setSelectedId("");
   }
 
@@ -36,10 +51,28 @@ export function ServiceForm() {
     setSelectedId(service._id);
     setName(service.name);
     setPrice(String(service.startingPrice));
-    setDescription(service.description);
+    const points = parseDescriptionPoints(service.description);
+    setIncludedPoints(points.length > 0 ? points : [""]);
+  }
+
+  function updatePoint(index: number, value: string) {
+    setIncludedPoints((curr) => curr.map((point, idx) => (idx === index ? value : point)));
+  }
+
+  function addPoint() {
+    setIncludedPoints((curr) => [...curr, ""]);
+  }
+
+  function removePoint(index: number) {
+    setIncludedPoints((curr) => {
+      const next = curr.filter((_point, idx) => idx !== index);
+      return next.length > 0 ? next : [""];
+    });
   }
 
   function validateFields() {
+    const description = buildDescription(includedPoints);
+
     if (!name || !price || !description) {
       setMessage("Please fill all required fields.");
       return false;
@@ -63,10 +96,10 @@ export function ServiceForm() {
     }
 
     setLoading(true);
-    createService({ name, description, startingPrice: Number(price) }, token)
+    createService({ name, description: buildDescription(includedPoints), startingPrice: Number(price) }, token)
       .then((newService) => {
         setServices((curr) => [newService, ...curr]);
-        setMessage("Service added successfully.");
+        setMessage("Service package added successfully.");
         loadService(newService);
       })
       .catch((error: unknown) => {
@@ -94,10 +127,10 @@ export function ServiceForm() {
     }
 
     setLoading(true);
-    updateService(selectedId, { name, description, startingPrice: Number(price) }, token)
+    updateService(selectedId, { name, description: buildDescription(includedPoints), startingPrice: Number(price) }, token)
       .then((updated) => {
         setServices((curr) => curr.map((service) => (service._id === selectedId ? updated : service)));
-        setMessage("Service updated successfully.");
+        setMessage("Service package updated successfully.");
       })
       .catch((error: unknown) => {
         const err = error instanceof Error ? error.message : "Unable to update service";
@@ -140,7 +173,7 @@ export function ServiceForm() {
     <Card className="border-[#3c2d1d]">
       <CardContent className="space-y-4 p-5">
         <h2 className="font-heading text-lg font-semibold">Service Management</h2>
-        <p className="text-sm text-[var(--muted-foreground)]">Add, update, and delete service packages with pricing.</p>
+        <p className="text-sm text-(--muted-foreground)">Create package cards with included services and one final amount.</p>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {services.map((service) => (
@@ -149,21 +182,41 @@ export function ServiceForm() {
               type="button"
               onClick={() => loadService(service)}
               className={`rounded-xl border p-4 text-left transition ${
-                selectedId === service._id ? "border-[var(--primary)] bg-[var(--primary-soft)]" : "border-[var(--border)]"
+                selectedId === service._id ? "border-(--primary) bg-(--primary-soft)" : "border-(--border)"
               }`}
             >
-              <p className="font-semibold">{service.name}</p>
-              <p className="mt-1 text-sm text-[var(--muted-foreground)]">{service.description}</p>
-              <p className="mt-1 text-sm">₹{service.startingPrice}</p>
+              <p className="font-semibold text-base">{service.name}</p>
+              <p className="mt-2 text-xl font-bold">₹{service.startingPrice}</p>
+              <div className="mt-3 space-y-1">
+                {parseDescriptionPoints(service.description).slice(0, 5).map((point, index) => (
+                  <p key={`${service._id}-${index}`} className="text-xs text-(--muted-foreground)">• {point}</p>
+                ))}
+              </div>
             </button>
           ))}
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <Input placeholder="Service name" value={name} onChange={(event) => setName(event.target.value)} />
-          <Input placeholder="Price" value={price} onChange={(event) => setPrice(event.target.value)} />
+          <Input placeholder="Package name" value={name} onChange={(event) => setName(event.target.value)} />
+          <Input type="number" min={1} placeholder="Final amount" value={price} onChange={(event) => setPrice(event.target.value)} />
         </div>
-        <Textarea placeholder="Description" value={description} onChange={(event) => setDescription(event.target.value)} />
+
+        <div className="space-y-2 rounded-xl border border-(--border) p-3">
+          <p className="text-sm font-medium">Included Services</p>
+          {includedPoints.map((point, index) => (
+            <div key={`point-${index}`} className="flex gap-2">
+              <Input
+                placeholder={`Point ${index + 1}`}
+                value={point}
+                onChange={(event) => updatePoint(index, event.target.value)}
+              />
+              <Button type="button" variant="ghost" onClick={() => removePoint(index)} disabled={loading}>
+                Remove
+              </Button>
+            </div>
+          ))}
+          <Button type="button" variant="secondary" onClick={addPoint} disabled={loading}>Add Point</Button>
+        </div>
 
         <div className="flex flex-wrap gap-2">
           <Button type="button" onClick={handleAdd} disabled={loading}>Add</Button>
@@ -172,7 +225,7 @@ export function ServiceForm() {
           <Button type="button" variant="ghost" onClick={resetForm} disabled={loading}>Clear</Button>
         </div>
 
-        {message ? <p className="text-sm text-[var(--muted-foreground)]">{message}</p> : null}
+        {message ? <p className="text-sm text-(--muted-foreground)">{message}</p> : null}
       </CardContent>
     </Card>
   );

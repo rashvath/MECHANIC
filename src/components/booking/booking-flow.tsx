@@ -4,14 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { CalendarDays, CheckCircle2, Clock3, MapPin, WalletCards } from "lucide-react";
 import { createBooking, fetchServices, fetchServiceZones, getUserToken, type ApiService, type ApiServiceZone } from "@/lib/api";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ConfirmationModal } from "@/components/modals/confirmation-modal";
 
-const steps = ["Bike", "Service", "Location", "Schedule", "Review", "Confirmation"];
+const steps = ["Bike", "Location", "Schedule", "Review", "Confirmation"];
 
 const dates = ["Today", "Tomorrow", "Friday", "Saturday"];
 const slots = [
@@ -23,7 +22,7 @@ const slots = [
   { time: "5:30 PM", available: false },
 ];
 
-export function BookingFlow() {
+export function BookingFlow({ preselectedServiceId }: { preselectedServiceId?: string }) {
   const [step, setStep] = useState(1);
   const [bikeBrand, setBikeBrand] = useState("");
   const [bikeModel, setBikeModel] = useState("");
@@ -33,6 +32,8 @@ export function BookingFlow() {
   const [serviceAddress, setServiceAddress] = useState("");
   const [selectedDate, setSelectedDate] = useState("Tomorrow");
   const [selectedTime, setSelectedTime] = useState("4:00 PM");
+  const [isLocating, setIsLocating] = useState(false);
+  const [locationError, setLocationError] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [servicesError, setServicesError] = useState("");
@@ -47,14 +48,15 @@ export function BookingFlow() {
       .then((apiServices) => {
         setServices(apiServices);
         if (apiServices.length > 0) {
-          setSelectedServices([apiServices[0]._id]);
+          const hasPreselected = preselectedServiceId && apiServices.some((item) => item._id === preselectedServiceId);
+          setSelectedServices([hasPreselected ? preselectedServiceId : apiServices[0]._id]);
         }
       })
       .catch((error: unknown) => {
         const message = error instanceof Error ? error.message : "Unable to load services";
         setServicesError(message);
       });
-  }, []);
+  }, [preselectedServiceId]);
 
   useEffect(() => {
     fetchServiceZones()
@@ -71,9 +73,30 @@ export function BookingFlow() {
     return `${selectedServiceObjects.length} services selected`;
   }, [selectedServiceObjects]);
 
-  function onServiceToggle(serviceId: string) {
-    setSelectedServices((prev) =>
-      prev.includes(serviceId) ? prev.filter((id) => id !== serviceId) : [...prev, serviceId],
+  function onSelectService(serviceId: string) {
+    setSelectedServices([serviceId]);
+  }
+
+  function useCurrentLocation() {
+    if (typeof window === "undefined" || !navigator.geolocation) {
+      setLocationError("Geolocation is not supported on this device/browser.");
+      return;
+    }
+
+    setLocationError("");
+    setIsLocating(true);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setServiceAddress(`Google Maps: https://maps.google.com/?q=${latitude},${longitude}`);
+        setIsLocating(false);
+      },
+      () => {
+        setLocationError("Unable to fetch your current location. Please allow location permission.");
+        setIsLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 },
     );
   }
 
@@ -91,7 +114,7 @@ export function BookingFlow() {
           <div key={item} className="flex items-center gap-2">
             <div
               className={`grid h-8 w-8 place-items-center rounded-full text-xs font-semibold ${
-                step >= i + 1 ? "bg-[var(--primary)] text-white" : "bg-[var(--muted)] text-[var(--muted-foreground)]"
+                step >= i + 1 ? "bg-(--primary) text-white" : "bg-(--muted) text-(--muted-foreground)"
               }`}
             >
               {i + 1}
@@ -107,7 +130,7 @@ export function BookingFlow() {
             {step === 1 ? (
               <div>
                 <h2 className="font-heading text-xl font-semibold">Bike Details</h2>
-                <p className="mt-1 text-sm text-[var(--muted-foreground)]">Required: bike brand and bike model.</p>
+                <p className="mt-1 text-sm text-(--muted-foreground)">Required: bike brand and bike model.</p>
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   <Input placeholder="Bike brand" value={bikeBrand} onChange={(event) => setBikeBrand(event.target.value)} />
                   <Input placeholder="Bike model" value={bikeModel} onChange={(event) => setBikeModel(event.target.value)} />
@@ -117,53 +140,64 @@ export function BookingFlow() {
 
             {step === 2 ? (
               <div>
-                <h2 className="font-heading text-xl font-semibold">Select Service</h2>
+                <h2 className="font-heading text-xl font-semibold">Select Service Package</h2>
+                <p className="mt-1 text-sm text-(--muted-foreground)">Choose one package. If you came from a card, it is preselected and you can change it.</p>
                 <div className="mt-4 space-y-3">
-                  {services.map((service) => (
-                    <button
-                      key={service._id}
-                      onClick={() => onServiceToggle(service._id)}
-                      className={`w-full rounded-xl border p-4 text-left transition ${
-                        selectedServices.includes(service._id)
-                          ? "border-[var(--primary)] bg-[var(--primary-soft)]"
-                          : "border-[var(--border)]"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="font-semibold">{service.name}</p>
-                        <Badge>Doorstep</Badge>
-                      </div>
-                      <p className="mt-2 text-xs text-[var(--muted-foreground)]">{service.description}</p>
-                    </button>
-                  ))}
-                  {servicesError ? <p className="text-sm text-[var(--danger)]">{servicesError}</p> : null}
+                  {services.map((service) => {
+                    const isSelected = selectedServices.includes(service._id);
+                    return (
+                      <button
+                        key={service._id}
+                        type="button"
+                        onClick={() => onSelectService(service._id)}
+                        className={`w-full rounded-xl border p-4 text-left transition ${
+                          isSelected ? "border-(--primary) bg-(--primary-soft)" : "border-(--border)"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="font-semibold">{service.name}</p>
+                          <p className="text-sm font-semibold">₹{service.startingPrice}</p>
+                        </div>
+                        <p className="mt-2 text-xs text-(--muted-foreground)">
+                          {service.description.split("\n").map((line) => line.replace(/^[-*]\s*/, "").trim()).filter(Boolean).slice(0, 2).join(" • ")}
+                        </p>
+                      </button>
+                    );
+                  })}
                 </div>
+                {servicesError ? <p className="mt-2 text-sm text-(--danger)">{servicesError}</p> : null}
               </div>
             ) : null}
 
             {step === 3 ? (
               <div>
                 <h2 className="font-heading text-xl font-semibold">Service Address</h2>
-                <p className="mt-1 text-sm text-[var(--muted-foreground)]">Pick your service zone, then add full address details.</p>
+                <p className="mt-1 text-sm text-(--muted-foreground)">Pick your service zone, then add full address details or use your live Google location.</p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {serviceZones.map((zone) => (
                     <button
                       key={zone._id}
                       onClick={() => setServiceAddress((current) => (current.trim() ? current : `${zone.name}, `))}
-                      className="rounded-full border border-[var(--border)] bg-[var(--muted)] px-3 py-1 text-xs hover:border-[var(--primary)]"
+                      className="rounded-full border border-(--border) bg-(--muted) px-3 py-1 text-xs hover:border-(--primary)"
                     >
                       {zone.name}
                     </button>
                   ))}
                 </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button type="button" variant="secondary" onClick={useCurrentLocation} disabled={isLocating}>
+                    {isLocating ? "Fetching location..." : "Use Current Location"}
+                  </Button>
+                </div>
                 <div className="mt-4">
                   <Textarea
-                    placeholder="Enter full address with area and PIN code"
+                    placeholder="Enter full address, or paste Google Maps location link"
                     value={serviceAddress}
                     onChange={(event) => setServiceAddress(event.target.value)}
                   />
                 </div>
-                {zonesError ? <p className="mt-2 text-sm text-[var(--danger)]">{zonesError}</p> : null}
+                {locationError ? <p className="mt-2 text-sm text-(--danger)">{locationError}</p> : null}
+                {zonesError ? <p className="mt-2 text-sm text-(--danger)">{zonesError}</p> : null}
               </div>
             ) : null}
 
@@ -176,7 +210,7 @@ export function BookingFlow() {
                       key={date}
                       onClick={() => setSelectedDate(date)}
                       className={`rounded-full px-4 py-2 text-sm ${
-                        selectedDate === date ? "bg-[var(--primary)] text-white" : "bg-[var(--muted)]"
+                        selectedDate === date ? "bg-(--primary) text-white" : "bg-(--muted)"
                       }`}
                     >
                       {date}
@@ -191,10 +225,10 @@ export function BookingFlow() {
                       onClick={() => setSelectedTime(slot.time)}
                       className={`rounded-xl border px-4 py-3 text-sm ${
                         !slot.available
-                          ? "cursor-not-allowed border-[var(--border)] bg-[var(--muted)] text-[var(--muted-foreground)]"
+                          ? "cursor-not-allowed border-(--border) bg-(--muted) text-(--muted-foreground)"
                           : selectedTime === slot.time
-                            ? "border-[var(--primary)] bg-[var(--primary-soft)]"
-                            : "border-[var(--border)]"
+                            ? "border-(--primary) bg-(--primary-soft)"
+                            : "border-(--border)"
                       }`}
                     >
                       {slot.time}
@@ -210,7 +244,7 @@ export function BookingFlow() {
                 <Card className="border-dashed">
                   <CardContent className="space-y-2 p-4 text-sm">
                     <p><strong>Bike:</strong> {bikeBrand} {bikeModel}</p>
-                    <p><strong>Service:</strong> {selectedServiceName}</p>
+                    <p><strong>Package:</strong> {selectedServiceName}</p>
                     <p><strong>Date:</strong> {selectedDate}</p>
                     <p><strong>Time:</strong> {selectedTime}</p>
                     <p><strong>Address:</strong> {serviceAddress}</p>
@@ -218,15 +252,15 @@ export function BookingFlow() {
                   </CardContent>
                 </Card>
                 <Button onClick={() => setConfirmOpen(true)}>Confirm Booking</Button>
-                {submitError ? <p className="text-sm text-[var(--danger)]">{submitError}</p> : null}
+                {submitError ? <p className="text-sm text-(--danger)">{submitError}</p> : null}
               </div>
             ) : null}
 
             {step === 6 ? (
               <div className="text-center">
-                <CheckCircle2 className="mx-auto h-16 w-16 text-[var(--success)]" />
+                <CheckCircle2 className="mx-auto h-16 w-16 text-(--success)" />
                 <h2 className="mt-4 font-heading text-2xl font-semibold">Your Service is Booked!</h2>
-                <div className="mx-auto mt-4 max-w-md space-y-2 text-sm text-[var(--muted-foreground)]">
+                <div className="mx-auto mt-4 max-w-md space-y-2 text-sm text-(--muted-foreground)">
                   <p>Booking ID: {bookingId}</p>
                   <p>Bike: {bikeBrand} {bikeModel}</p>
                   <p>Date: {selectedDate}</p>
@@ -242,7 +276,7 @@ export function BookingFlow() {
             ) : null}
 
             {step <= 5 ? (
-              <div className="mt-6 flex items-center justify-between border-t border-[var(--border)] pt-5">
+              <div className="mt-6 flex items-center justify-between border-t border-(--border) pt-5">
                 <Button variant="secondary" onClick={() => setStep((curr) => Math.max(1, curr - 1))} disabled={step === 1}>
                   Back
                 </Button>
@@ -306,7 +340,7 @@ export function BookingFlow() {
           }
         }}
       />
-      {submitting ? <p className="mt-3 text-center text-sm text-[var(--muted-foreground)]">Submitting booking...</p> : null}
+      {submitting ? <p className="mt-3 text-center text-sm text-(--muted-foreground)">Submitting booking...</p> : null}
     </div>
   );
 }
