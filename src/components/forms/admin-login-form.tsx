@@ -36,7 +36,7 @@ export function AdminLoginForm() {
 
     setLoading(true);
 
-    login(email, password)
+    login({ email, password })
       .then((data) => {
         if (data.user.role !== "admin") {
           setError("This account is not an admin account.");

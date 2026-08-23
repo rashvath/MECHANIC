@@ -38,6 +38,7 @@ export function AdminBookingsTable() {
   const [error, setError] = useState(token ? "" : "Admin login required.");
   const [approvingId, setApprovingId] = useState("");
   const [payingId, setPayingId] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) {
@@ -59,6 +60,32 @@ export function AdminBookingsTable() {
     if (activeFilter === "all") return bookings;
     return bookings.filter((booking) => booking.status === activeFilter);
   }, [activeFilter, bookings]);
+
+  const selectedLocationUrl = useMemo(() => {
+    if (!selectedLocation) return null;
+    const value = selectedLocation.trim();
+    if (!value) return null;
+    const httpMatch = value.match(/https?:\/\/[^\s)]+/i);
+    if (httpMatch?.[0]) {
+      return httpMatch[0].replace(/[.,;:!?]+$/, "");
+    }
+
+    const mapsWithoutProtocol = value.match(/(?:^|\s)(maps\.google\.com\/[^\s)]+)/i);
+    if (mapsWithoutProtocol?.[1]) {
+      return `https://${mapsWithoutProtocol[1].replace(/[.,;:!?]+$/, "")}`;
+    }
+
+    const webWithoutProtocol = value.match(/(?:^|\s)(www\.[^\s)]+)/i);
+    if (webWithoutProtocol?.[1]) {
+      return `https://${webWithoutProtocol[1].replace(/[.,;:!?]+$/, "")}`;
+    }
+
+    if (/^-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?$/.test(value)) {
+      return `https://maps.google.com/?q=${encodeURIComponent(value)}`;
+    }
+
+    return null;
+  }, [selectedLocation]);
 
   function handleApprove(bookingId: string) {
     if (!token) {
@@ -135,19 +162,19 @@ export function AdminBookingsTable() {
 
       {loading ? (
         <Card>
-          <CardContent className="p-6 text-sm text-[var(--muted-foreground)]">Loading bookings...</CardContent>
+          <CardContent className="p-6 text-sm text-(--muted-foreground)">Loading bookings...</CardContent>
         </Card>
       ) : null}
 
       {!loading && error ? (
         <Card>
-          <CardContent className="p-6 text-sm text-[var(--muted-foreground)]">{error}</CardContent>
+          <CardContent className="p-6 text-sm text-(--muted-foreground)">{error}</CardContent>
         </Card>
       ) : null}
 
       {!loading && !error && filteredBookings.length === 0 ? (
         <Card>
-          <CardContent className="p-6 text-sm text-[var(--muted-foreground)]">No bookings found for this filter.</CardContent>
+          <CardContent className="p-6 text-sm text-(--muted-foreground)">No bookings found for this filter.</CardContent>
         </Card>
       ) : null}
 
@@ -162,6 +189,8 @@ export function AdminBookingsTable() {
                 <TableHead>Bike</TableHead>
                 <TableHead>Service</TableHead>
                 <TableHead>Schedule</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Mobile Number</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
@@ -175,6 +204,16 @@ export function AdminBookingsTable() {
                   <TableCell>{booking.bikeName}</TableCell>
                   <TableCell>{booking.serviceIds.map((service) => service.name).join(", ") || "-"}</TableCell>
                   <TableCell>{booking.scheduledDate} {booking.scheduledTime}</TableCell>
+                  <TableCell>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => setSelectedLocation(booking.serviceAddress || "")}
+                    >
+                      Location
+                    </Button>
+                  </TableCell>
+                  <TableCell>{booking.mobileNumber || booking.userId?.mobile || "-"}</TableCell>
                   <TableCell>
                     {booking.detailedBill?.finalPayableAmount
                       ? `₹${booking.detailedBill.finalPayableAmount}`
@@ -227,7 +266,7 @@ export function AdminBookingsTable() {
                           <Link href={`/admin/bookings/${booking._id}/bill`}>View Bill</Link>
                         </Button>
                       ) : (
-                        <span className="text-xs text-[var(--muted-foreground)]">-</span>
+                        <span className="text-xs text-(--muted-foreground)">-</span>
                       )
                     )}
                   </TableCell>
@@ -237,6 +276,33 @@ export function AdminBookingsTable() {
           </Table>
         </CardContent>
       </Card>
+      ) : null}
+
+      {selectedLocation !== null ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4">
+          <Card className="w-full max-w-lg border-[#5b4424] bg-[#121821] p-5 text-[#f5efe4]">
+            <h3 className="font-heading text-lg font-semibold text-[#dfae60]">Customer Location</h3>
+            <p className="mt-3 break-all text-sm text-[#cabba4]">{selectedLocation || "Location not provided."}</p>
+            {selectedLocationUrl ? (
+              <div className="mt-4 space-y-1">
+                <p className="text-xs font-medium uppercase tracking-wide text-[#cabba4]">Google Maps</p>
+                <a
+                  href={selectedLocationUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block break-all text-sm font-semibold text-[#f4c778] underline underline-offset-4"
+                >
+                  {selectedLocationUrl}
+                </a>
+              </div>
+            ) : null}
+            <div className="mt-5 flex justify-end">
+              <Button size="sm" variant="secondary" onClick={() => setSelectedLocation(null)}>
+                Close
+              </Button>
+            </div>
+          </Card>
+        </div>
       ) : null}
     </div>
   );

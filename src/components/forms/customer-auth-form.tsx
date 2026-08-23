@@ -12,28 +12,44 @@ import { Input } from "@/components/ui/input";
 export function CustomerAuthForm() {
   const router = useRouter();
   const [mode, setMode] = useState<"login" | "register">("login");
+  const [loginMobile, setLoginMobile] = useState("");
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [registerMobile, setRegisterMobile] = useState("");
+  const [registerEmail, setRegisterEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  function normalizeMobileInput(value: string) {
+    return value.replace(/\D/g, "").slice(0, 10);
+  }
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
     setError("");
     setSuccess("");
 
-    if (!email || !password || (mode === "register" && !name)) {
+    if (!password || (mode === "login" && !loginMobile) || (mode === "register" && (!name || !registerMobile))) {
       setError("Please fill all required fields.");
+      return;
+    }
+
+    if (mode === "login" && String(loginMobile).replace(/\D/g, "").length < 10) {
+      setError("Please enter a valid mobile number.");
+      return;
+    }
+
+    if (mode === "register" && String(registerMobile).replace(/\D/g, "").length < 10) {
+      setError("Please enter a valid mobile number.");
       return;
     }
 
     setLoading(true);
 
     const request = mode === "register"
-      ? register(name, email, password)
-      : login(email, password);
+      ? register(name, registerMobile, password, registerEmail)
+      : login({ mobile: loginMobile, password });
 
     request
       .then((data) => {
@@ -94,29 +110,59 @@ export function CustomerAuthForm() {
 
                 <form onSubmit={onSubmit} className="space-y-3">
                   {mode === "register" ? (
+                    <div className="space-y-3">
+                      <div className="relative">
+                        <User className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-[#d8ab58]" />
+                        <Input
+                          placeholder="Full name"
+                          value={name}
+                          onChange={(event) => setName(event.target.value)}
+                          disabled={loading}
+                          className="rounded-xl border-2 border-black bg-[#17130f] pl-10 text-[#f6e7cf] placeholder:text-[#8f7d5f]"
+                        />
+                      </div>
+                      <div className="relative">
+                        <Mail className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-[#d8ab58]" />
+                        <Input
+                          type="text"
+                          placeholder="Mobile Number (Required)"
+                          value={registerMobile}
+                          onChange={(event) => setRegisterMobile(normalizeMobileInput(event.target.value))}
+                          disabled={loading}
+                          inputMode="numeric"
+                          maxLength={10}
+                          className="rounded-xl border-2 border-black bg-[#17130f] pl-10 text-[#f6e7cf] placeholder:text-[#8f7d5f]"
+                        />
+                      </div>
+                      <div className="relative">
+                        <Mail className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-[#d8ab58]" />
+                        <Input
+                          type="email"
+                          placeholder="Email (Optional)"
+                          value={registerEmail}
+                          onChange={(event) => setRegisterEmail(event.target.value)}
+                          disabled={loading}
+                          className="rounded-xl border-2 border-black bg-[#17130f] pl-10 text-[#f6e7cf] placeholder:text-[#8f7d5f]"
+                        />
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {mode === "login" ? (
                     <div className="relative">
-                      <User className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-[#d8ab58]" />
+                      <Mail className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-[#d8ab58]" />
                       <Input
-                        placeholder="Full name"
-                        value={name}
-                        onChange={(event) => setName(event.target.value)}
+                        type="text"
+                        placeholder="Mobile Number"
+                        value={loginMobile}
+                        onChange={(event) => setLoginMobile(normalizeMobileInput(event.target.value))}
                         disabled={loading}
+                        inputMode="numeric"
+                        maxLength={10}
                         className="rounded-xl border-2 border-black bg-[#17130f] pl-10 text-[#f6e7cf] placeholder:text-[#8f7d5f]"
                       />
                     </div>
                   ) : null}
-
-                  <div className="relative">
-                    <Mail className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-[#d8ab58]" />
-                    <Input
-                      type="email"
-                      placeholder="Email ID"
-                      value={email}
-                      onChange={(event) => setEmail(event.target.value)}
-                      disabled={loading}
-                      className="rounded-xl border-2 border-black bg-[#17130f] pl-10 text-[#f6e7cf] placeholder:text-[#8f7d5f]"
-                    />
-                  </div>
 
                   <div className="relative">
                     <LogIn className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-[#d8ab58]" />

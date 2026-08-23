@@ -26,6 +26,7 @@ export function BookingFlow({ preselectedServiceId }: { preselectedServiceId?: s
   const [step, setStep] = useState(1);
   const [bikeBrand, setBikeBrand] = useState("");
   const [bikeModel, setBikeModel] = useState("");
+  const [mobileNumber, setMobileNumber] = useState("");
   const [services, setServices] = useState<ApiService[]>([]);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [serviceZones, setServiceZones] = useState<ApiServiceZone[]>([]);
@@ -40,6 +41,10 @@ export function BookingFlow({ preselectedServiceId }: { preselectedServiceId?: s
   const [zonesError, setZonesError] = useState("");
   const [bookingId, setBookingId] = useState("BK-PENDING");
   const [submitting, setSubmitting] = useState(false);
+
+  function normalizeMobileInput(value: string) {
+    return value.replace(/\D/g, "").slice(0, 10);
+  }
 
   const selectedServiceObjects = services.filter((service) => selectedServices.includes(service._id));
 
@@ -101,7 +106,7 @@ export function BookingFlow({ preselectedServiceId }: { preselectedServiceId?: s
   }
 
   const canContinue =
-    (step === 1 && Boolean(bikeBrand.trim() && bikeModel.trim())) ||
+    (step === 1 && Boolean(bikeBrand.trim() && bikeModel.trim() && String(mobileNumber).replace(/\D/g, "").length >= 10)) ||
     (step === 2 && selectedServices.length > 0) ||
     (step === 3 && Boolean(serviceAddress.trim())) ||
     (step === 4 && Boolean(selectedDate && selectedTime)) ||
@@ -134,6 +139,15 @@ export function BookingFlow({ preselectedServiceId }: { preselectedServiceId?: s
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   <Input placeholder="Bike brand" value={bikeBrand} onChange={(event) => setBikeBrand(event.target.value)} />
                   <Input placeholder="Bike model" value={bikeModel} onChange={(event) => setBikeModel(event.target.value)} />
+                </div>
+                <div className="mt-3">
+                  <Input
+                    placeholder="Mobile Number"
+                    value={mobileNumber}
+                    onChange={(event) => setMobileNumber(normalizeMobileInput(event.target.value))}
+                    inputMode="numeric"
+                    maxLength={10}
+                  />
                 </div>
               </div>
             ) : null}
@@ -244,6 +258,7 @@ export function BookingFlow({ preselectedServiceId }: { preselectedServiceId?: s
                 <Card className="border-dashed">
                   <CardContent className="space-y-2 p-4 text-sm">
                     <p><strong>Bike:</strong> {bikeBrand} {bikeModel}</p>
+                    <p><strong>Mobile:</strong> {mobileNumber || "-"}</p>
                     <p><strong>Package:</strong> {selectedServiceName}</p>
                     <p><strong>Date:</strong> {selectedDate}</p>
                     <p><strong>Time:</strong> {selectedTime}</p>
@@ -263,6 +278,7 @@ export function BookingFlow({ preselectedServiceId }: { preselectedServiceId?: s
                 <div className="mx-auto mt-4 max-w-md space-y-2 text-sm text-(--muted-foreground)">
                   <p>Booking ID: {bookingId}</p>
                   <p>Bike: {bikeBrand} {bikeModel}</p>
+                  <p>Mobile: {mobileNumber}</p>
                   <p>Date: {selectedDate}</p>
                   <p>Time: {selectedTime}</p>
                   <p>Address: {serviceAddress}</p>
@@ -296,6 +312,7 @@ export function BookingFlow({ preselectedServiceId }: { preselectedServiceId?: s
               <p className="flex items-center gap-2"><CalendarDays className="h-4 w-4" /> {selectedDate}</p>
               <p className="flex items-center gap-2"><Clock3 className="h-4 w-4" /> {selectedTime}</p>
               <p className="flex items-center gap-2"><WalletCards className="h-4 w-4" /> {bikeBrand || "Bike brand"} {bikeModel || "Bike model"}</p>
+              <p className="flex items-center gap-2"><WalletCards className="h-4 w-4" /> {mobileNumber || "Mobile number"}</p>
               <p className="flex items-center gap-2"><WalletCards className="h-4 w-4" /> Amount will be finalized by admin</p>
             </div>
           </CardContent>
@@ -321,6 +338,7 @@ export function BookingFlow({ preselectedServiceId }: { preselectedServiceId?: s
             const result = await createBooking(
               {
                 bikeName: `${bikeBrand} ${bikeModel}`.trim(),
+                mobileNumber: String(mobileNumber || "").replace(/\D/g, ""),
                 serviceAddress: serviceAddress.trim(),
                 serviceIds: selectedServices,
                 scheduledDate: selectedDate,

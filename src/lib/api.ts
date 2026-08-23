@@ -50,6 +50,7 @@ export type ApiDetailedBill = {
 export type ApiAdminBooking = {
   _id: string;
   bikeName: string;
+  mobileNumber?: string;
   serviceAddress?: string;
   scheduledDate: string;
   scheduledTime: string;
@@ -65,6 +66,7 @@ export type ApiAdminBooking = {
     _id: string;
     name: string;
     email: string;
+    mobile?: string;
   } | null;
   serviceIds: Array<{
     _id: string;
@@ -86,6 +88,7 @@ export type ApiAdminUser = {
 export type ApiUserBooking = {
   _id: string;
   bikeName: string;
+  mobileNumber?: string;
   serviceAddress?: string;
   scheduledDate: string;
   scheduledTime: string;
@@ -135,6 +138,7 @@ export type AuthResponse = {
     id: string;
     name: string;
     email: string;
+    mobile?: string;
     role: "admin" | "user";
   };
 };
@@ -184,19 +188,28 @@ export function setUserToken(token: string) {
   window.localStorage.setItem(authStorageKeys.user, token);
 }
 
-export async function login(email: string, password: string) {
+export async function login(payload: { password: string; email?: string; mobile?: string }) {
+  const normalizedMobile = String(payload.mobile || "").replace(/\D/g, "");
+  const normalizedEmail = String(payload.email || "").trim().toLowerCase();
+
   return apiRequest<AuthResponse>("/auth/login", {
     method: "POST",
     headers: buildHeaders(),
-    body: JSON.stringify({ email, password })
+    body: JSON.stringify({
+      password: payload.password,
+      email: normalizedEmail || undefined,
+      mobile: normalizedMobile || undefined,
+    })
   });
 }
 
-export async function register(name: string, email: string, password: string) {
+export async function register(name: string, mobile: string, password: string, email?: string) {
+  const normalizedMobile = String(mobile || "").replace(/\D/g, "");
+
   return apiRequest<AuthResponse>("/auth/register", {
     method: "POST",
     headers: buildHeaders(),
-    body: JSON.stringify({ name, email, password })
+    body: JSON.stringify({ name, email: String(email || "").trim() || undefined, mobile: normalizedMobile, password })
   });
 }
 
@@ -372,6 +385,7 @@ export async function downloadInvoiceHtml(bookingId: string, token: string) {
 export async function createBooking(
   payload: {
     bikeName: string;
+    mobileNumber: string;
     serviceAddress: string;
     serviceIds: string[];
     scheduledDate: string;
