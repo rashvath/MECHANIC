@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BookingFlow } from "@/components/booking/booking-flow";
 import { PublicHeader } from "@/components/navbar/public-header";
@@ -8,6 +8,14 @@ import { getUserToken } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function BookingPage() {
+  return (
+    <Suspense fallback={<BookingLoadingSkeleton />}>
+      <BookingPageClient />
+    </Suspense>
+  );
+}
+
+function BookingPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isChecking, setIsChecking] = useState(true);
@@ -51,6 +59,19 @@ export default function BookingPage() {
     <>
       <PublicHeader />
       <BookingFlow preselectedServiceId={preselectedServiceId} />
+    </>
+  );
+}
+
+function BookingLoadingSkeleton() {
+  return (
+    <>
+      <PublicHeader />
+      <div className="mx-auto w-full max-w-6xl space-y-4 px-4 py-8 sm:px-6">
+        <Skeleton className="h-10 w-52" />
+        <Skeleton className="h-52 w-full" />
+        <Skeleton className="h-52 w-full" />
+      </div>
     </>
   );
 }
