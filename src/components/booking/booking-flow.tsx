@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { CalendarDays, CheckCircle2, Clock3, MapPin, WalletCards } from "lucide-react";
 import { createBooking, fetchServices, fetchServiceZones, getUserToken, type ApiService, type ApiServiceZone } from "@/lib/api";
@@ -12,7 +12,6 @@ import { ConfirmationModal } from "@/components/modals/confirmation-modal";
 
 const steps = ["Bike", "Location", "Schedule", "Review", "Confirmation"];
 
-const dates = ["Today", "Tomorrow", "Friday", "Saturday"];
 const slots = [
   { time: "9:00 AM", available: true },
   { time: "10:30 AM", available: true },
@@ -21,6 +20,31 @@ const slots = [
   { time: "4:00 PM", available: true },
   { time: "5:30 PM", available: false },
 ];
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function toIsoDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatDateLabel(isoDate: string) {
+  if (!isoDate) return "-";
+  const parsed = new Date(`${isoDate}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return isoDate;
+  return parsed.toLocaleDateString(undefined, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
 
 export function BookingFlow({ preselectedServiceId }: { preselectedServiceId?: string }) {
   const [step, setStep] = useState(1);
@@ -31,7 +55,7 @@ export function BookingFlow({ preselectedServiceId }: { preselectedServiceId?: s
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [serviceZones, setServiceZones] = useState<ApiServiceZone[]>([]);
   const [serviceAddress, setServiceAddress] = useState("");
-  const [selectedDate, setSelectedDate] = useState("Tomorrow");
+  const [selectedDate, setSelectedDate] = useState(() => toIsoDate(addDays(new Date(), 1)));
   const [selectedTime, setSelectedTime] = useState("4:00 PM");
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState("");
@@ -41,6 +65,8 @@ export function BookingFlow({ preselectedServiceId }: { preselectedServiceId?: s
   const [zonesError, setZonesError] = useState("");
   const [bookingId, setBookingId] = useState("BK-PENDING");
   const [submitting, setSubmitting] = useState(false);
+  const submitLockRef = useRef(false);
+  const [dateInputRef, setDateInputRef] = useState<HTMLInputElement | null>(null);
 
   function normalizeMobileInput(value: string) {
     return value.replace(/\D/g, "").slice(0, 10);
@@ -77,6 +103,23 @@ export function BookingFlow({ preselectedServiceId }: { preselectedServiceId?: s
     if (selectedServiceObjects.length === 1) return selectedServiceObjects[0].name;
     return `${selectedServiceObjects.length} services selected`;
   }, [selectedServiceObjects]);
+
+  const quickDates = useMemo(() => {
+    const base = new Date();
+    const today = addDays(base, 0);
+    const tomorrow = addDays(base, 1);
+    const plus2 = addDays(base, 2);
+    const plus3 = addDays(base, 3);
+
+    return [
+      { label: "Today", value: toIsoDate(today) },
+      { label: "Tomorrow", value: toIsoDate(tomorrow) },
+      { label: plus2.toLocaleDateString(undefined, { weekday: "long" }), value: toIsoDate(plus2) },
+      { label: plus3.toLocaleDateString(undefined, { weekday: "long" }), value: toIsoDate(plus3) },
+    ];
+  }, []);
+
+  const displaySelectedDate = useMemo(() => formatDateLabel(selectedDate), [selectedDate]);
 
   function onSelectService(serviceId: string) {
     setSelectedServices([serviceId]);
@@ -218,18 +261,45 @@ export function BookingFlow({ preselectedServiceId }: { preselectedServiceId?: s
             {step === 4 ? (
               <div>
                 <h2 className="font-heading text-xl font-semibold">Date & Time</h2>
+                <p className="mt-1 text-sm text-(--muted-foreground)">Use quick picks or choose any date from calendar.</p>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {dates.map((date) => (
+                  {quickDates.map((date) => (
                     <button
-                      key={date}
-                      onClick={() => setSelectedDate(date)}
+                      key={date.value}
+                      onClick={() => setSelectedDate(date.value)}
                       className={`rounded-full px-4 py-2 text-sm ${
-                        selectedDate === date ? "bg-(--primary) text-white" : "bg-(--muted)"
+                        selectedDate === date.value ? "bg-(--primary) text-white" : "bg-(--muted)"
                       }`}
                     >
-                      {date}
+                      {date.label}
                     </button>
                   ))}
+                </div>
+                <div className="mt-4 max-w-xs">
+                  <label className="mb-1 block text-sm font-medium">Select date from calendar</label>
+                  <div className="relative">
+                    <Input
+                      ref={setDateInputRef}
+                      type="date"
+                      value={selectedDate}
+                      min={toIsoDate(new Date())}
+                      onChange={(event) => setSelectedDate(event.target.value)}
+                      className="scheme-dark pr-12 appearance-none [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-2 [&::-webkit-calendar-picker-indicator]:h-7 [&::-webkit-calendar-picker-indicator]:w-7 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+                    />
+                    <button
+                      type="button"
+                      aria-label="Open calendar"
+                      onClick={() => {
+                        if (!dateInputRef) return;
+                        dateInputRef.focus();
+                        const input = dateInputRef as HTMLInputElement & { showPicker?: () => void };
+                        input.showPicker?.();
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-[#f4c778] hover:bg-[#2a3342] hover:text-white"
+                    >
+                      <CalendarDays className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {slots.map((slot) => (
@@ -260,7 +330,7 @@ export function BookingFlow({ preselectedServiceId }: { preselectedServiceId?: s
                     <p><strong>Bike:</strong> {bikeBrand} {bikeModel}</p>
                     <p><strong>Mobile:</strong> {mobileNumber || "-"}</p>
                     <p><strong>Package:</strong> {selectedServiceName}</p>
-                    <p><strong>Date:</strong> {selectedDate}</p>
+                    <p><strong>Date:</strong> {displaySelectedDate}</p>
                     <p><strong>Time:</strong> {selectedTime}</p>
                     <p><strong>Address:</strong> {serviceAddress}</p>
                     <p><strong>Payment:</strong> Final amount is added by admin after service.</p>
@@ -279,7 +349,7 @@ export function BookingFlow({ preselectedServiceId }: { preselectedServiceId?: s
                   <p>Booking ID: {bookingId}</p>
                   <p>Bike: {bikeBrand} {bikeModel}</p>
                   <p>Mobile: {mobileNumber}</p>
-                  <p>Date: {selectedDate}</p>
+                  <p>Date: {displaySelectedDate}</p>
                   <p>Time: {selectedTime}</p>
                   <p>Address: {serviceAddress}</p>
                 </div>
@@ -309,7 +379,7 @@ export function BookingFlow({ preselectedServiceId }: { preselectedServiceId?: s
             <h3 className="font-heading text-lg font-semibold">Booking Summary</h3>
             <div className="mt-4 space-y-3 text-sm">
               <p className="flex items-center gap-2"><MapPin className="h-4 w-4" /> {serviceAddress || "No address added"}</p>
-              <p className="flex items-center gap-2"><CalendarDays className="h-4 w-4" /> {selectedDate}</p>
+              <p className="flex items-center gap-2"><CalendarDays className="h-4 w-4" /> {displaySelectedDate}</p>
               <p className="flex items-center gap-2"><Clock3 className="h-4 w-4" /> {selectedTime}</p>
               <p className="flex items-center gap-2"><WalletCards className="h-4 w-4" /> {bikeBrand || "Bike brand"} {bikeModel || "Bike model"}</p>
               <p className="flex items-center gap-2"><WalletCards className="h-4 w-4" /> {mobileNumber || "Mobile number"}</p>
@@ -324,17 +394,27 @@ export function BookingFlow({ preselectedServiceId }: { preselectedServiceId?: s
         title="Confirm service booking"
         description="This will create your booking request and assign the nearest available service partner."
         onCancel={() => setConfirmOpen(false)}
+        confirmDisabled={submitting}
+        cancelDisabled={submitting}
+        confirmText={submitting ? "Submitting..." : "Confirm"}
         onConfirm={async () => {
+          if (submitLockRef.current) {
+            return;
+          }
+
+          submitLockRef.current = true;
+          setSubmitting(true);
           setSubmitError("");
           const token = getUserToken();
           if (!token) {
             setConfirmOpen(false);
             setSubmitError("Please login as customer first.");
+            submitLockRef.current = false;
+            setSubmitting(false);
             return;
           }
 
           try {
-            setSubmitting(true);
             const result = await createBooking(
               {
                 bikeName: `${bikeBrand} ${bikeModel}`.trim(),
@@ -354,6 +434,7 @@ export function BookingFlow({ preselectedServiceId }: { preselectedServiceId?: s
             setSubmitError(message);
             setConfirmOpen(false);
           } finally {
+            submitLockRef.current = false;
             setSubmitting(false);
           }
         }}

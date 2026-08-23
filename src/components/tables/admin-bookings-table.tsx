@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { FileDown } from "lucide-react";
 import { approveAdminBooking, fetchAdminBookings, getAdminToken, updateAdminBookingPayment, type ApiAdminBooking } from "@/lib/api";
+import { downloadStyledInvoicePdf } from "@/lib/detailed-bill-pdf";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,6 +40,7 @@ export function AdminBookingsTable() {
   const [error, setError] = useState(token ? "" : "Admin login required.");
   const [approvingId, setApprovingId] = useState("");
   const [payingId, setPayingId] = useState("");
+  const [downloadingId, setDownloadingId] = useState("");
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
 
   useEffect(() => {
@@ -143,6 +146,29 @@ export function AdminBookingsTable() {
       .finally(() => {
         setPayingId("");
       });
+  }
+
+  async function handleInvoiceDownload(booking: ApiAdminBooking) {
+    if (!token) {
+      setError("Admin login required.");
+      return;
+    }
+
+    if (!booking.detailedBill) {
+      setError("Save bill first before downloading invoice PDF.");
+      return;
+    }
+
+    try {
+      setDownloadingId(booking._id);
+      setError("");
+      await downloadStyledInvoicePdf(booking);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unable to download invoice PDF";
+      setError(message);
+    } finally {
+      setDownloadingId("");
+    }
   }
 
   return (
@@ -255,16 +281,35 @@ export function AdminBookingsTable() {
                           {payingId === booking._id ? "Saving..." : booking.detailedBill ? "Online Paid" : "Save Bill First"}
                         </Button>
                         {booking.detailedBill ? (
-                          <Button size="sm" variant="ghost" asChild>
-                            <Link href={`/admin/bookings/${booking._id}/bill`}>View Bill</Link>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => handleInvoiceDownload(booking)}
+                            disabled={downloadingId === booking._id}
+                            className="border border-[#5b4424] bg-[#1f2a39] text-[#f4c778] hover:bg-[#253244]"
+                          >
+                            <FileDown className="mr-1 h-4 w-4" />
+                            {downloadingId === booking._id ? "Downloading..." : "Download Invoice PDF"}
                           </Button>
                         ) : null}
                       </div>
                     ) : (
                       booking.detailedBill ? (
-                        <Button size="sm" variant="ghost" asChild>
-                          <Link href={`/admin/bookings/${booking._id}/bill`}>View Bill</Link>
-                        </Button>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => handleInvoiceDownload(booking)}
+                            disabled={downloadingId === booking._id}
+                            className="border border-[#5b4424] bg-[#1f2a39] text-[#f4c778] hover:bg-[#253244]"
+                          >
+                            <FileDown className="mr-1 h-4 w-4" />
+                            {downloadingId === booking._id ? "Downloading..." : "Download Invoice PDF"}
+                          </Button>
+                          <Button size="sm" variant="ghost" asChild>
+                            <Link href={`/admin/bookings/${booking._id}/bill`}>View Bill</Link>
+                          </Button>
+                        </div>
                       ) : (
                         <span className="text-xs text-(--muted-foreground)">-</span>
                       )

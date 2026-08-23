@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { MinusCircle, Plus } from "lucide-react";
+import { FileDown, MinusCircle, Plus } from "lucide-react";
 import { type ApiAdminBooking, type ApiDetailedBillItem } from "@/lib/api";
 import { downloadDetailedBillPdf } from "@/lib/detailed-bill-pdf";
 import { Button } from "@/components/ui/button";
@@ -193,6 +193,7 @@ export function DetailedBillEditor({ booking, saving, onBack, onSave }: Detailed
       });
       setSuccess("Detailed bill saved successfully.");
       setError("");
+      onBack();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unable to save detailed bill";
       setError(message);
@@ -395,7 +396,14 @@ export function DetailedBillEditor({ booking, saving, onBack, onSave }: Detailed
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <h3 className="font-heading text-xl font-semibold text-[#f0c778]">Royal Mechanic Bill Preview</h3>
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" variant="secondary" onClick={handleDownloadPdf}>Download PDF</Button>
+              <Button
+                size="sm"
+                onClick={handleDownloadPdf}
+                className="border border-[#7a5a2e] bg-[#d7a95f] text-[#1a1208] hover:bg-[#e5bb74]"
+              >
+                <FileDown className="mr-1 h-4 w-4" />
+                Download Invoice PDF
+              </Button>
               <Button size="sm" variant="secondary" onClick={handlePrint}>Print Bill</Button>
               <Button size="sm" variant="secondary" onClick={handleShare}>Share Bill</Button>
             </div>
