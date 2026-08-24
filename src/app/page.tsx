@@ -6,12 +6,12 @@ export default function HomePage() {
     "@graph": [
       {
         "@type": "LocalBusiness",
-        "@id": "https://royalmechanic.in/#business",
+        "@id": "https://royalmechanic.shop/#business",
         name: "Royal Mechanic",
         description:
           "Doorstep bike service and repair booking platform in Bengaluru.",
-        url: "https://royalmechanic.in",
-        image: "https://royalmechanic.in/images/logo.png",
+        url: "https://royalmechanic.shop",
+        image: "https://royalmechanic.shop/images/logo.png",
         telephone: "+91-90000-00000",
         areaServed: "Bengaluru",
         address: {
@@ -23,9 +23,9 @@ export default function HomePage() {
       },
       {
         "@type": "WebSite",
-        "@id": "https://royalmechanic.in/#website",
+        "@id": "https://royalmechanic.shop/#website",
         name: "Royal Mechanic",
-        url: "https://royalmechanic.in",
+        url: "https://royalmechanic.shop",
       },
     ],
   };

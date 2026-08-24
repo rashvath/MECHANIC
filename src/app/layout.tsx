@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://royalmechanic.in";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://royalmechanic.shop";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,8 +16,13 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
+  icons: {
+    icon: "/images/logo.png",
+    shortcut: "/images/logo.png",
+    apple: "/images/logo.png",
+  },
   title: {
-    default: "Royal Mechanic | Doorstep Bike Service in Bengaluru",
+    default: "Royal Mechanic | Doorstep Bike Service & Repair in Bengaluru",
     template: "%s | Royal Mechanic",
   },
   description:
@@ -36,7 +41,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     url: "/",
-    title: "Royal Mechanic | Doorstep Bike Service in Bengaluru",
+    title: "Royal Mechanic | Doorstep Bike Service & Repair in Bengaluru",
     description:
       "Book doorstep bike service in Bengaluru with Royal Mechanic. Fast pickup support, trusted mechanics, and clear billing.",
     siteName: "Royal Mechanic",
@@ -52,9 +57,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Royal Mechanic | Doorstep Bike Service in Bengaluru",
+    title: "Royal Mechanic | Doorstep Bike Service & Repair in Bengaluru",
     description:
-      "Doorstep bike service booking platform for Bengaluru. Service packages, tracking, and transparent billing.",
+      "Royal Mechanic offers affordable doorstep bike service and repair in Bengaluru. Book a trusted mechanic for bike servicing, maintenance and repairs at your doorstep.",
     images: ["/images/logo.png"],
   },
   robots: {
